@@ -23,6 +23,8 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
 
     int previousID = -1;
 
+    String hihi = "나라야 안녕!";
+
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
@@ -57,7 +59,7 @@ public class MainActivity extends AppCompatActivity implements OnClickListener {
         TextView msg = (TextView) message1.findViewById(R.id.textView);
 
         msg_list.addView(message1);
-        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);        ;
+        RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         int newId = View.generateViewId();
         if(previousID != -1)
             params.addRule(RelativeLayout.BELOW, previousID);
