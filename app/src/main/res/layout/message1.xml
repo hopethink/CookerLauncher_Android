@@ -32,5 +32,5 @@
             android:layout_height="40dp"
             android:layout_marginTop="0dp"
             android:layout_alignParentRight="true"
-            android:src="@drawable/user_pacific" />
+            android:src="@drawable/user_penguin" />
 </RelativeLayout>

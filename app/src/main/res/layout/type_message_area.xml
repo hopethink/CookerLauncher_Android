@@ -22,5 +22,6 @@
         android:layout_weight="5"
         android:padding="4dp"
         android:src="@android:drawable/ic_menu_send"
-        android:id="@+id/btn_send"/>
+        android:id="@+id/btn_send"
+        android:onClick="onSendBtnClick" />
 </LinearLayout>
