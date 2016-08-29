@@ -11,6 +11,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.provider.ContactsContract;
 import android.support.v7.app.AppCompatActivity;
+import android.text.Editable;
+import android.text.TextWatcher;
+import android.util.Log;
 import android.view.LayoutInflater;
 import android.view.View;
 import android.view.View.OnClickListener;
@@ -20,6 +23,11 @@ import android.widget.ImageView;
 import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
+import android.widget.Toast;
+
+import com.google.android.gms.appindexing.Action;
+import com.google.android.gms.appindexing.AppIndex;
+import com.google.android.gms.common.api.GoogleApiClient;
 
 import java.util.HashMap;
 import java.util.List;
@@ -35,46 +43,80 @@ public class MainActivity extends AppCompatActivity {
     private ProgressDialog pDialog;
     Cursor cursor;
     static Map<String, String> appNameList = new HashMap<>();
+
     static {
         appNameList.put("카카오톡", "com.kakao.talk");
+        appNameList.put("카톡", "com.kakao.talk");
+        appNameList.put("ㅋㅌ", "com.kakao.talk");
     }
 
     int previousID = -1;
-
-    String hihi = "나라야 안녕!";
+    /**
+     * ATTENTION: This was auto-generated to implement the App Indexing API.
+     * See https://g.co/AppIndexing/AndroidStudio for more information.
+     */
+    private GoogleApiClient client;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         setContentView(R.layout.activity_main);
 
-        type_message_area =  findViewById(R.id.type_message_area);
-        btn_send = (ImageView)type_message_area.findViewById(R.id.btn_send);
-        input_area = (EditText)type_message_area.findViewById(R.id.input_area);
+        type_message_area = findViewById(R.id.type_message_area);
+        btn_send = (ImageView) type_message_area.findViewById(R.id.btn_send);
+        input_area = (EditText) type_message_area.findViewById(R.id.input_area);
 
-        msg_list = (RelativeLayout)findViewById(R.id.msg_list);
-        scroll = (ScrollView)findViewById(R.id.msg_scroll);
+        msg_list = (RelativeLayout) findViewById(R.id.msg_list);
+        scroll = (ScrollView) findViewById(R.id.msg_scroll);
 
         scroll.getChildAt(0).setOnClickListener(new OnClickListener() {
             @Override
             public void onClick(View view) {
-                InputMethodManager imm = (InputMethodManager)getSystemService(Context.INPUT_METHOD_SERVICE);
+                InputMethodManager imm = (InputMethodManager) getSystemService(Context.INPUT_METHOD_SERVICE);
                 imm.hideSoftInputFromWindow(input_area.getWindowToken(), 0);
             }
         });
+
+
+
+
+        // 텍스트 입력창 변화 감지
+        input_area.addTextChangedListener(new TextWatcher() {
+
+            @Override // 입력되는 텍스트에 변화가 있을 때
+            public void onTextChanged(CharSequence s, int start, int before, int count) {
+
+                if (s.toString().indexOf(" ") >= 0) return;
+
+                if (s.toString().length() >= 2) {
+//                    Toast.makeText(getApplicationContext(), s.toString(), Toast.LENGTH_SHORT).show();
+
+                }
+            }
+
+            @Override // 입력하기 전에
+            public void beforeTextChanged(CharSequence s, int start, int count, int after) {}
+
+            @Override // 입력이 끝났을 때
+            public void afterTextChanged(Editable editable) {
+
+            }
+
+        });
+
     }
 
     // 메시지 전송버튼 클릭
     public void onSendBtnClick(View view) {
         String text = input_area.getText().toString();
-        if(text.isEmpty()) return;
+        if (text.isEmpty()) return;
         View message1 = LayoutInflater.from(this).inflate(R.layout.message1, null);
         TextView msg = (TextView) message1.findViewById(R.id.textView);
 
         msg_list.addView(message1);
         RelativeLayout.LayoutParams params = new RelativeLayout.LayoutParams(RelativeLayout.LayoutParams.MATCH_PARENT, RelativeLayout.LayoutParams.WRAP_CONTENT);
         int newId = View.generateViewId();
-        if(previousID != -1)
+        if (previousID != -1)
             params.addRule(RelativeLayout.BELOW, previousID);
         previousID = newId;
         message1.setLayoutParams(params);
@@ -91,15 +133,23 @@ public class MainActivity extends AppCompatActivity {
         // 문장 분석
         String[] words = text.split(" ");
 
+        // 지도
+        if (text.length() > 10) {
+            Intent intent = new Intent(Intent.ACTION_VIEW, Uri.parse("https://m.map.daum.net/actions/carRoute?startLoc=%ED%96%A5%EA%B5%B0%EC%9E%A0%EC%8B%A4%ED%83%80%EC%9B%8C&sxEnc=MMLNSO&syEnc=QNOPTRL&endLoc=%EB%B0%A9%EC%9D%B4%EC%82%AC%EA%B1%B0%EB%A6%AC&exEnc=MMRRQU&eyEnc=QNOQMRV&ids=P8145775%2CP11066894&service="));
+            startActivity(intent);
+            return;
+        }
+
         switch (words.length) {
             case 2:
                 switch (words[1]) {
-                    case "전화" :
+                    case "전화":
+                    case "call":
                         // 이름으로 전화걸기
                         String nameToFind = words[0];
                         findNumberByName(nameToFind);
                         break;
-                    case "실행" :
+                    case "실행":
                         String appName = words[0];
                         if (getPackageList(appName)) {
                             Intent intent = getPackageManager().getLaunchIntentForPackage(appNameList.get(appName));
@@ -111,6 +161,7 @@ public class MainActivity extends AppCompatActivity {
                 break;
         }
     }
+
     public boolean getPackageList(String appName) {
         String packageName;
         if ((packageName = appNameList.get(appName)) == null) return false;
@@ -124,13 +175,12 @@ public class MainActivity extends AppCompatActivity {
 
         try {
             for (int i = 0; i < mApps.size(); i++) {
-                if(mApps.get(i).activityInfo.packageName.startsWith(packageName)){
+                if (mApps.get(i).activityInfo.packageName.startsWith(packageName)) {
                     isExist = true;
                     break;
                 }
             }
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             isExist = false;
         }
         return isExist;
@@ -169,22 +219,22 @@ public class MainActivity extends AppCompatActivity {
         String Phone_CONTACT_ID = ContactsContract.CommonDataKinds.Phone.CONTACT_ID;
         String NUMBER = ContactsContract.CommonDataKinds.Phone.NUMBER;
         ContentResolver contentResolver = getContentResolver();
-        cursor = contentResolver.query(CONTENT_URI, null,null, null, null);
+        cursor = contentResolver.query(CONTENT_URI, null, null, null, null);
 
         // Iterate every contact in the phone
         if (cursor.getCount() > 0) {
             while (cursor.moveToNext()) {
 
-                String contact_id = cursor.getString(cursor.getColumnIndex( _ID ));
-                String name = cursor.getString(cursor.getColumnIndex( DISPLAY_NAME ));
+                String contact_id = cursor.getString(cursor.getColumnIndex(_ID));
+                String name = cursor.getString(cursor.getColumnIndex(DISPLAY_NAME));
 
                 if (!isMatchUserName(name, paramName)) continue;
 
-                int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex( HAS_PHONE_NUMBER )));
+                int hasPhoneNumber = Integer.parseInt(cursor.getString(cursor.getColumnIndex(HAS_PHONE_NUMBER)));
                 if (hasPhoneNumber > 0) {
 
                     //This is to read multiple phone numbers associated with the same contact
-                    Cursor phoneCursor = contentResolver.query(PhoneCONTENT_URI, null, Phone_CONTACT_ID + " = ?", new String[] { contact_id }, null);
+                    Cursor phoneCursor = contentResolver.query(PhoneCONTENT_URI, null, Phone_CONTACT_ID + " = ?", new String[]{contact_id}, null);
                     while (phoneCursor.moveToNext()) {
                         phoneNumber = phoneCursor.getString(phoneCursor.getColumnIndex(NUMBER));
                         phoneCursor.close();
@@ -200,6 +250,4 @@ public class MainActivity extends AppCompatActivity {
     private boolean isMatchUserName(String name, String paramName) {
         return name.toLowerCase().indexOf(paramName.toLowerCase()) >= 0 ? true : false;
     }
-
-
 }
