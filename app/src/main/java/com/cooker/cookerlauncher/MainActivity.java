@@ -4,6 +4,8 @@ import android.app.ProgressDialog;
 import android.content.ContentResolver;
 import android.content.Context;
 import android.content.Intent;
+import android.content.pm.PackageManager;
+import android.content.pm.ResolveInfo;
 import android.database.Cursor;
 import android.net.Uri;
 import android.os.Bundle;
@@ -19,6 +21,10 @@ import android.widget.RelativeLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 public class MainActivity extends AppCompatActivity {
 
     View type_message_area;
@@ -28,6 +34,10 @@ public class MainActivity extends AppCompatActivity {
     ScrollView scroll;
     private ProgressDialog pDialog;
     Cursor cursor;
+    static Map<String, String> appNameList = new HashMap<>();
+    static {
+        appNameList.put("카카오톡", "com.kakao.talk");
+    }
 
     int previousID = -1;
 
@@ -78,10 +88,52 @@ public class MainActivity extends AppCompatActivity {
             }
         });
 
-        // 이름으로 전화걸기
-        String nameToFind = text.split(" ")[0];
-        findNumberByName(nameToFind);
+        // 문장 분석
+        String[] words = text.split(" ");
 
+        switch (words.length) {
+            case 2:
+                switch (words[1]) {
+                    case "전화" :
+                        // 이름으로 전화걸기
+                        String nameToFind = words[0];
+                        findNumberByName(nameToFind);
+                        break;
+                    case "실행" :
+                        String appName = words[0];
+                        if (getPackageList(appName)) {
+                            Intent intent = getPackageManager().getLaunchIntentForPackage(appNameList.get(appName));
+                            intent.addFlags(Intent.FLAG_ACTIVITY_NEW_TASK);
+                            startActivity(intent);
+                        }
+                        break;
+                }
+                break;
+        }
+    }
+    public boolean getPackageList(String appName) {
+        String packageName;
+        if ((packageName = appNameList.get(appName)) == null) return false;
+
+        boolean isExist = false;
+        PackageManager pkgMgr = getPackageManager();
+        List<ResolveInfo> mApps;
+        Intent mainIntent = new Intent(Intent.ACTION_MAIN, null);
+        mainIntent.addCategory(Intent.CATEGORY_LAUNCHER);
+        mApps = pkgMgr.queryIntentActivities(mainIntent, 0);
+
+        try {
+            for (int i = 0; i < mApps.size(); i++) {
+                if(mApps.get(i).activityInfo.packageName.startsWith(packageName)){
+                    isExist = true;
+                    break;
+                }
+            }
+        }
+        catch (Exception e) {
+            isExist = false;
+        }
+        return isExist;
     }
 
     private void findNumberByName(final String name) {
@@ -148,4 +200,6 @@ public class MainActivity extends AppCompatActivity {
     private boolean isMatchUserName(String name, String paramName) {
         return name.toLowerCase().indexOf(paramName.toLowerCase()) >= 0 ? true : false;
     }
+
+
 }
